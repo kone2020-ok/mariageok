@@ -5,31 +5,54 @@ import { GuestService } from './guestService';
 // Service hybride qui utilise Firestore si disponible, sinon localStorage
 export class HybridGuestService {
   private static useFirestore = true;
+  private static isInitialized = false;
+  private static initializationPromise: Promise<void> | null = null;
 
   // Test if Firestore is available
   static async testFirestore(): Promise<boolean> {
     try {
-
+      console.log('Testing Firestore connectivity...');
 
       // Simple test to see if Firestore is accessible
-      const testResult = await Promise.race([
+      await Promise.race([
         FirestoreGuestService.getGuestStats(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout after 3 seconds')), 3000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout after 5 seconds')), 5000))
       ]);
 
-
+      console.log('Firestore test successful');
       return true;
     } catch (error: any) {
-
-
+      console.warn('Firestore test failed:', error.message);
       return false;
     }
   }
 
   // Initialize and determine which service to use
   static async initialize(): Promise<void> {
-    // Test if Firebase is available
-    this.useFirestore = await this.testFirestore();
+    if (this.isInitialized) {
+      return;
+    }
+
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this._doInitialize();
+    return this.initializationPromise;
+  }
+
+  private static async _doInitialize(): Promise<void> {
+    try {
+      console.log('Initializing HybridGuestService...');
+      // Test if Firebase is available
+      this.useFirestore = await this.testFirestore();
+      this.isInitialized = true;
+      console.log(`HybridGuestService initialized. Using: ${this.useFirestore ? 'Firestore' : 'localStorage'}`);
+    } catch (error) {
+      console.error('Failed to initialize HybridGuestService:', error);
+      this.useFirestore = false;
+      this.isInitialized = true;
+    }
   }
 
   // Add guest
@@ -90,30 +113,47 @@ export class HybridGuestService {
 
   // Get guests with current status
   static async getGuestsWithCurrentStatus(): Promise<Guest[]> {
+    await this.initialize();
+
     if (this.useFirestore) {
       try {
-        return await FirestoreGuestService.getGuestsWithCurrentStatus();
+        const guests = await FirestoreGuestService.getGuestsWithCurrentStatus();
+        console.log(`Loaded ${guests.length} guests from Firestore`);
+        return guests;
       } catch (error) {
+        console.warn('Firestore failed for getGuestsWithCurrentStatus, falling back to localStorage');
         this.useFirestore = false;
-        return GuestService.getGuestsWithCurrentStatus();
+        const guests = GuestService.getGuestsWithCurrentStatus();
+        console.log(`Loaded ${guests.length} guests from localStorage (fallback)`);
+        return guests;
       }
     } else {
-      return GuestService.getGuestsWithCurrentStatus();
+      const guests = GuestService.getGuestsWithCurrentStatus();
+      console.log(`Loaded ${guests.length} guests from localStorage`);
+      return guests;
     }
   }
 
   // Get guest stats
   static async getGuestStats(): Promise<GuestStats> {
+    await this.initialize();
+
     if (this.useFirestore) {
       try {
-        return await FirestoreGuestService.getGuestStats();
+        const stats = await FirestoreGuestService.getGuestStats();
+        console.log('Stats from Firestore:', stats);
+        return stats;
       } catch (error) {
-        console.warn('Firestore failed, falling back to localStorage');
+        console.warn('Firestore failed for getGuestStats, falling back to localStorage');
         this.useFirestore = false;
-        return GuestService.getGuestStats();
+        const stats = GuestService.getGuestStats();
+        console.log('Stats from localStorage (fallback):', stats);
+        return stats;
       }
     } else {
-      return GuestService.getGuestStats();
+      const stats = GuestService.getGuestStats();
+      console.log('Stats from localStorage:', stats);
+      return stats;
     }
   }
 

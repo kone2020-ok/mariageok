@@ -23,16 +23,37 @@ import Admin from './components/Admin';
 import Navigation from './components/Navigation';
 
 function App() {
-  const [currentSection, setCurrentSection] = useState('home');
-  const [showPortal, setShowPortal] = useState(true);
+  const [currentSection, setCurrentSection] = useState(() => {
+    // Restaurer la section depuis localStorage au démarrage
+    const savedSection = localStorage.getItem('currentSection');
+    return savedSection || 'home';
+  });
+  const [showPortal, setShowPortal] = useState(() => {
+    // Ne pas montrer le portail si on revient sur une section spécifique
+    const savedSection = localStorage.getItem('currentSection');
+    return !savedSection || savedSection === 'home';
+  });
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    // Restaurer le statut admin depuis localStorage
+    return localStorage.getItem('isAdmin') === 'true';
+  });
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
   const [confirmationMode, setConfirmationMode] = useState<string | null>(null);
   const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
   const [adminError, setAdminError] = useState<string | null>(null);
+
+  // Sauvegarder la section courante dans localStorage
+  useEffect(() => {
+    localStorage.setItem('currentSection', currentSection);
+  }, [currentSection]);
+
+  // Sauvegarder le statut admin dans localStorage
+  useEffect(() => {
+    localStorage.setItem('isAdmin', isAdmin.toString());
+  }, [isAdmin]);
 
   useEffect(() => {
     // Initialize Firebase (create admin account if needed)
@@ -218,10 +239,16 @@ function App() {
       setCurrentUser(null);
       setShowPortal(true);
       setCurrentSection('home');
-      localStorage.removeItem('wedding-admin-logged-in');
-      sessionStorage.removeItem('wedding-portal-shown-session');
-    } catch (error) {
 
+      // Nettoyer le localStorage
+      localStorage.removeItem('wedding-admin-logged-in');
+      localStorage.removeItem('isAdmin');
+      localStorage.removeItem('currentSection');
+      sessionStorage.removeItem('wedding-portal-shown-session');
+
+      console.log('Déconnexion réussie et localStorage nettoyé');
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
     }
   };
 

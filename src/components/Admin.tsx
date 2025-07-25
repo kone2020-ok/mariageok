@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Download, Calendar, MessageSquare, CheckCircle, XCircle, MapPin, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Download, Calendar, MessageSquare, CheckCircle, XCircle, MapPin, Clock, AlertTriangle, FileText, RefreshCw } from 'lucide-react';
 import { Guest, GuestStats } from '../types/guest';
 import { HybridGuestService } from '../services/hybridGuestService';
 
@@ -12,6 +12,8 @@ const Admin: React.FC<AdminProps> = ({ onLogout }) => {
   const [stats, setStats] = useState<GuestStats>({ total: 0, confirmed: 0, pending: 0, absent: 0, expired: 0 });
   const [filter, setFilter] = useState<'all' | 'confirmed' | 'pending' | 'absent' | 'expired'>('all');
   const [firestoreStatus, setFirestoreStatus] = useState<string>('unknown');
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
   const testFirestore = async () => {
     setFirestoreStatus('testing');
@@ -31,27 +33,47 @@ const Admin: React.FC<AdminProps> = ({ onLogout }) => {
     }
   };
 
-  useEffect(() => {
-    const loadGuests = async () => {
+  const loadGuests = async () => {
+    setIsLoading(true);
+    try {
+      console.log('Loading guests in Admin component...');
+
+      // Update expired guests first
+      await HybridGuestService.updateExpiredGuests();
+
+      // Load guests with current status
+      const currentGuests = await HybridGuestService.getGuestsWithCurrentStatus();
+      console.log('Guests loaded:', currentGuests.length);
+      setGuests(currentGuests);
+
+      // Calculate stats
+      const currentStats = await HybridGuestService.getGuestStats();
+      console.log('Stats calculated:', currentStats);
+      setStats(currentStats);
+
+      console.log('Admin data loading completed successfully');
+      setLastRefresh(new Date());
+    } catch (error) {
+      console.error('Error loading admin data:', error);
+      // En cas d'erreur, essayer de charger depuis localStorage
       try {
-        // Update expired guests first
-        await HybridGuestService.updateExpiredGuests();
-
-        // Load guests with current status
-        const currentGuests = await HybridGuestService.getGuestsWithCurrentStatus();
-        setGuests(currentGuests);
-
-        // Calculate stats
-        const currentStats = await HybridGuestService.getGuestStats();
-        setStats(currentStats);
-      } catch (error) {
-
+        const fallbackGuests = await HybridGuestService.getGuestsWithCurrentStatus();
+        const fallbackStats = await HybridGuestService.getGuestStats();
+        setGuests(fallbackGuests);
+        setStats(fallbackStats);
+        console.log('Fallback data loaded successfully');
+      } catch (fallbackError) {
+        console.error('Fallback loading also failed:', fallbackError);
       }
-    };
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadGuests();
-    // Refresh every 30 seconds
-    const interval = setInterval(loadGuests, 30000);
+    // Refresh every 60 seconds (réduit de 30s pour éviter les conflits)
+    const interval = setInterval(loadGuests, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -96,6 +118,203 @@ const Admin: React.FC<AdminProps> = ({ onLogout }) => {
     link.click();
   };
 
+  const exportToPDF = async () => {
+    try {
+      console.log('Début de l\'export PDF...');
+
+      // Import dynamique pour éviter les problèmes de SSR
+      const jsPDF = (await import('jspdf')).default;
+      const autoTable = (await import('jspdf-autotable')).default;
+
+      console.log('Bibliothèques PDF chargées');
+
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+
+      console.log('Document PDF créé');
+
+      // Couleurs
+      const terracottaColor = [180, 100, 80];
+      const darkGray = [60, 60, 60];
+      const lightGray = [240, 240, 240];
+
+      // En-tête avec style élégant
+      doc.setFillColor(180, 100, 80);
+      doc.rect(0, 0, pageWidth, 35, 'F');
+
+      // Titre principal
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Mariage Audrey & Stephane', pageWidth / 2, 15, { align: 'center' });
+
+      // Sous-titre
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
+      doc.text('16 août 2025 - Liste des Invités', pageWidth / 2, 25, { align: 'center' });
+
+      // Informations générales
+      doc.setTextColor(60, 60, 60);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+
+      const currentDate = new Date().toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      doc.text(`Rapport généré le ${currentDate}`, 20, 50);
+      doc.text(`Filtre appliqué: ${filter === 'all' ? 'Tous les invités' : filter}`, 20, 60);
+
+      // Statistiques
+      doc.setFillColor(240, 240, 240);
+      doc.rect(15, 70, pageWidth - 30, 25, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Statistiques:', 20, 82);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total: ${stats.total} | Confirmés: ${stats.confirmed} | En attente: ${stats.pending} | Absents: ${stats.absent} | Expirés: ${stats.expired}`, 20, 90);
+
+      // Préparation des données pour le tableau
+      const tableData = filteredGuests.map(guest => [
+        `${guest.firstName} ${guest.lastName}`,
+        guest.city || '-',
+        guest.status === 'confirmed' ? 'Confirmé' :
+        guest.status === 'pending' ? 'En attente' :
+        guest.status === 'absent' ? 'Absent' : 'Expiré',
+        guest.message ? (guest.message.length > 40 ? guest.message.substring(0, 40) + '...' : guest.message) : '-',
+        guest.submittedAt.toLocaleDateString('fr-FR')
+      ]);
+
+      console.log('Données du tableau préparées:', tableData.length, 'lignes');
+
+      // Vérifier si autoTable est disponible
+      if (typeof autoTable === 'function') {
+        console.log('Utilisation d\'autoTable');
+        // Configuration du tableau
+        autoTable(doc, {
+        head: [['Nom complet', 'Ville', 'Statut', 'Message', 'Date']],
+        body: tableData,
+        startY: 105,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [180, 100, 80],
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 10,
+        },
+        alternateRowStyles: {
+          fillColor: [250, 250, 250],
+        },
+        columnStyles: {
+          0: { cellWidth: 45 }, // Nom
+          1: { cellWidth: 30 }, // Ville
+          2: { cellWidth: 25 }, // Statut
+          3: { cellWidth: 50 }, // Message
+          4: { cellWidth: 25 }, // Date
+        },
+        margin: { left: 15, right: 15 },
+        didDrawPage: function (data: any) {
+          // Pied de page avec informations des fiancés
+          const pageCount = doc.getNumberOfPages();
+          const currentPage = doc.getCurrentPageInfo().pageNumber;
+
+          // Ligne de séparation
+          doc.setDrawColor(180, 100, 80);
+          doc.setLineWidth(0.5);
+          doc.line(15, pageHeight - 25, pageWidth - 15, pageHeight - 25);
+
+          // Informations des fiancés
+          doc.setTextColor(60, 60, 60);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+
+          // Colonne gauche - Audrey
+          doc.setFont('helvetica', 'bold');
+          doc.text('Audrey', 20, pageHeight - 18);
+          doc.setFont('helvetica', 'normal');
+          doc.text('Email: audrey.stephane.mariage@gmail.com', 20, pageHeight - 13);
+          doc.text('Téléphone: +225 07 87 03 68 311', 20, pageHeight - 8);
+
+          // Colonne droite - Stéphane
+          doc.setFont('helvetica', 'bold');
+          doc.text('Stéphane', pageWidth / 2 + 10, pageHeight - 18);
+          doc.setFont('helvetica', 'normal');
+          doc.text('Email: audrey.stephane.mariage@gmail.com', pageWidth / 2 + 10, pageHeight - 13);
+          doc.text('Téléphone: +225 05 05 45 45 45', pageWidth / 2 + 10, pageHeight - 8);
+
+          // Numéro de page
+          doc.setTextColor(180, 100, 80);
+          doc.setFont('helvetica', 'bold');
+          doc.text(`Page ${currentPage} sur ${pageCount}`, pageWidth - 30, pageHeight - 8);
+
+          // Lieu et date du mariage
+          doc.setTextColor(60, 60, 60);
+          doc.setFont('helvetica', 'italic');
+          doc.text('Bingerville, Côte d\'Ivoire', pageWidth / 2, pageHeight - 3, { align: 'center' });
+        }
+      });
+
+      console.log('Tableau ajouté au PDF');
+
+      } else {
+        console.log('autoTable non disponible, création d\'un PDF simple');
+
+        // Version simple sans tableau
+        let yPosition = 110;
+
+        // En-têtes
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('Nom complet', 20, yPosition);
+        doc.text('Ville', 80, yPosition);
+        doc.text('Statut', 120, yPosition);
+        doc.text('Date', 160, yPosition);
+
+        yPosition += 10;
+        doc.line(15, yPosition - 5, pageWidth - 15, yPosition - 5);
+
+        // Données
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+
+        filteredGuests.forEach((guest, index) => {
+          if (yPosition > pageHeight - 30) {
+            doc.addPage();
+            yPosition = 30;
+          }
+
+          doc.text(`${guest.firstName} ${guest.lastName}`, 20, yPosition);
+          doc.text(guest.city || '-', 80, yPosition);
+          doc.text(guest.status === 'confirmed' ? 'Confirmé' :
+                  guest.status === 'pending' ? 'En attente' :
+                  guest.status === 'absent' ? 'Absent' : 'Expiré', 120, yPosition);
+          doc.text(guest.submittedAt.toLocaleDateString('fr-FR'), 160, yPosition);
+
+          yPosition += 8;
+        });
+
+        console.log('PDF simple créé');
+      }
+
+      // Sauvegarde du PDF
+      const fileName = `liste-invites-mariage-audrey-stephane-${filter}-${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+
+      console.log('PDF sauvegardé:', fileName);
+
+    } catch (error) {
+      console.error('Erreur lors de la génération du PDF:', error);
+      alert('Erreur lors de la génération du PDF. Vérifiez la console pour plus de détails.');
+    }
+  };
+
   const getAttendingBadge = (attending: boolean | null) => {
   };
   
@@ -131,6 +350,13 @@ const Admin: React.FC<AdminProps> = ({ onLogout }) => {
           <h2 id="admin-space-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-terracotta-600 to-terracotta-700 bg-clip-text text-transparent mb-4">
             👑 Espace Administrateur
           </h2>
+          <p className="text-gray-600 text-lg sm:text-xl mb-4">
+            Gérez les invitations et consultez les statistiques du mariage
+          </p>
+          <p className="text-gray-500 text-sm mb-6">
+            📊 Dernière actualisation : {lastRefresh.toLocaleTimeString('fr-FR')}
+            <span className="ml-2">🔄 Auto-refresh : 60s</span>
+          </p>
           <div className="flex items-center justify-center gap-4 mb-6">
             <button
               onClick={testFirestore}
@@ -139,6 +365,16 @@ const Admin: React.FC<AdminProps> = ({ onLogout }) => {
             >
               {firestoreStatus === 'testing' ? 'Test...' : '🔥 Test Firestore'}
             </button>
+
+            <button
+              onClick={loadGuests}
+              disabled={isLoading}
+              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full font-medium transition-colors duration-200 text-sm sm:text-base flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              {isLoading ? 'Chargement...' : 'Actualiser'}
+            </button>
+
             <button
               onClick={onLogout}
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full font-medium transition-colors duration-200 text-sm sm:text-base"
@@ -242,13 +478,23 @@ const Admin: React.FC<AdminProps> = ({ onLogout }) => {
               </select>
             </div>
             
-            <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
-            >
-              <Download className="w-4 h-4" />
-              Exporter CSV ({filteredGuests.length})
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={exportToCSV}
+                className="flex items-center gap-2 bg-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                <Download className="w-4 h-4" />
+                Exporter CSV ({filteredGuests.length})
+              </button>
+
+              <button
+                onClick={exportToPDF}
+                className="flex items-center gap-2 bg-terracotta-600 hover:bg-terracotta-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200"
+              >
+                <FileText className="w-4 h-4" />
+                Exporter PDF ({filteredGuests.length})
+              </button>
+            </div>
           </div>
         </div>
 
