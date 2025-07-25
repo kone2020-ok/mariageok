@@ -79,19 +79,19 @@ const ConfirmationPortal: React.FC<ConfirmationPortalProps> = ({ guestId, onConf
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 to-pink-50 flex items-center justify-center p-4">
-      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-rose-100 overflow-hidden max-w-2xl w-full">
-        <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-8 text-white text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <User className="w-8 h-8" />
+    <div className="min-h-screen bg-gradient-to-br from-terracotta-50 to-terracotta-warm-50 flex items-center justify-center p-4">
+      <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-terracotta-100 overflow-hidden max-w-2xl w-full">
+        <div className="bg-gradient-to-r from-terracotta-500 to-terracotta-600 p-6 sm:p-8 text-white text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
-          <h2 className="text-3xl font-bold mb-2">Confirmation de Présence</h2>
-          <p className="text-rose-100">Finalisez votre réponse pour le mariage</p>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-2">Confirmation de Présence</h2>
+          <p className="text-terracotta-100 text-sm sm:text-base">Finalisez votre réponse pour le mariage</p>
         </div>
 
-        <div className="p-8">
-          <div className="bg-rose-50 rounded-2xl p-6 mb-8 border border-rose-200">
-            <h3 className="text-xl font-semibold text-rose-800 mb-4">Vos informations</h3>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="bg-terracotta-50 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 border border-terracotta-200">
+            <h3 className="text-lg sm:text-xl font-semibold text-terracotta-800 mb-4">Vos informations</h3>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <span className="text-sm text-gray-600">Nom complet</span>

@@ -1,51 +1,61 @@
 import React, { useState } from 'react';
 import { Camera, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useScrollAnimation, useStaggeredAnimation, fadeInUpClasses, scaleInClasses } from '../hooks/useScrollAnimation';
 
 const Gallery: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<number | null>(null);
+  const titleAnimation = useScrollAnimation();
+  const gridAnimation = useStaggeredAnimation(300);
 
-  // Photos from Pexels - romantic/wedding themed
+
+
+  // Photos locales - nos souvenirs
   const photos = [
     {
-      id: 1,
-      url: 'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=800',
-      thumbnail: 'https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg?auto=compress&cs=tinysrgb&w=400',
-      caption: 'Notre première photo ensemble'
-    },
-    {
-      id: 2,
-      url: 'https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&cs=tinysrgb&w=800',
-      thumbnail: 'https://images.pexels.com/photos/1444442/pexels-photo-1444442.jpeg?auto=compress&cs=tinysrgb&w=400',
-      caption: 'Un moment de complicité'
-    },
-    {
       id: 3,
-      url: 'https://images.pexels.com/photos/1024960/pexels-photo-1024960.jpeg?auto=compress&cs=tinysrgb&w=800',
-      thumbnail: 'https://images.pexels.com/photos/1024960/pexels-photo-1024960.jpeg?auto=compress&cs=tinysrgb&w=400',
+      url: '/assets/IMAGE (3).JPG',
+      thumbnail: '/assets/IMAGE (3).JPG',
       caption: 'Nos fiançailles'
     },
     {
       id: 4,
-      url: 'https://images.pexels.com/photos/1444424/pexels-photo-1444424.jpeg?auto=compress&cs=tinysrgb&w=800',
-      thumbnail: 'https://images.pexels.com/photos/1444424/pexels-photo-1444424.jpeg?auto=compress&cs=tinysrgb&w=400',
+      url: '/assets/WhatsApp Image 2025-07-23 à 19.38.45_f1d95962.jpg',
+      thumbnail: '/assets/WhatsApp Image 2025-07-23 à 19.38.45_f1d95962.jpg',
       caption: 'En voyage ensemble'
     },
     {
       id: 5,
-      url: 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=800',
-      thumbnail: 'https://images.pexels.com/photos/1024967/pexels-photo-1024967.jpeg?auto=compress&cs=tinysrgb&w=400',
+      url: '/assets/IMAGE (5).jpg',
+      thumbnail: '/assets/IMAGE (5).jpg',
       caption: 'Un coucher de soleil romantique'
     },
     {
       id: 6,
-      url: 'https://images.pexels.com/photos/1444416/pexels-photo-1444416.jpeg?auto=compress&cs=tinysrgb&w=800',
-      thumbnail: 'https://images.pexels.com/photos/1444416/pexels-photo-1444416.jpeg?auto=compress&cs=tinysrgb&w=400',
+      url: '/assets/IMAGE (6).jpg',
+      thumbnail: '/assets/IMAGE (6).jpg',
       caption: 'Préparatifs du mariage'
+    },
+    {
+      id: 7,
+      url: '/assets/IMAGE (7).jpg',
+      thumbnail: '/assets/IMAGE (7).jpg',
+      caption: 'Nos moments précieux'
+    },
+    {
+      id: 8,
+      url: '/assets/WhatsApp Image 2025-07-23 à 19.30.31_f6deea07.jpg',
+      thumbnail: '/assets/WhatsApp Image 2025-07-23 à 19.30.31_f6deea07.jpg',
+      caption: 'Notre amour éternel'
     }
   ];
 
+  // Dupliquer les photos pour un effet de boucle infinie
+  const duplicatedPhotos = [...photos, ...photos];
+
   const openModal = (index: number) => {
-    setSelectedImage(index);
+    // Calculer l'index réel dans le tableau original
+    const realIndex = index % photos.length;
+    setSelectedImage(realIndex);
   };
 
   const closeModal = () => {
@@ -65,45 +75,78 @@ const Gallery: React.FC = () => {
   };
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-br from-rose-50 to-pink-50">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-br from-terracotta-50 to-terracotta-warm-50">
+      {/* Styles CSS pour l'animation de défilement */}
+      <style>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        .carousel-scroll {
+          animation: scroll 20s linear infinite;
+        }
+        .carousel-scroll:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-4">
+        <div ref={titleAnimation.ref} className={`text-center mb-12 sm:mb-16 ${fadeInUpClasses(titleAnimation.isVisible)}`}>
+          <h2 id="gallery-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-terracotta-600 to-terracotta-700 bg-clip-text text-transparent mb-4">
             📸 Notre Galerie
           </h2>
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="h-px bg-rose-300 w-16"></div>
-            <Camera className="w-5 h-5 text-rose-500" />
-            <div className="h-px bg-rose-300 w-16"></div>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
+            <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-terracotta-500" />
+            <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
           </div>
-          <p className="text-lg text-rose-700">Quelques moments précieux de notre histoire d'amour</p>
+          <p className="text-base sm:text-lg text-terracotta-700 px-4">Quelques moments précieux de notre histoire d'amour</p>
         </div>
 
-        {/* Photo Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {photos.map((photo, index) => (
-            <div
-              key={photo.id}
-              className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer"
-              onClick={() => openModal(index)}
-            >
-              <div className="aspect-square overflow-hidden">
-                <img
-                  src={photo.thumbnail}
-                  alt={photo.caption}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="absolute bottom-4 left-4 right-4">
-                  <p className="text-white font-medium text-sm">{photo.caption}</p>
+        {/* Carrousel de photos avec boucle infinie */}
+        <div
+          ref={gridAnimation.ref}
+          className={`relative overflow-hidden max-w-6xl mx-auto ${scaleInClasses(gridAnimation.isVisible)}`}
+        >
+          <div className="carousel-scroll flex">
+            {duplicatedPhotos.map((photo, index) => (
+              <div
+                key={`${photo.id}-${index}`}
+                className="group relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 cursor-pointer mx-2 flex-shrink-0"
+                style={{ width: '300px' }}
+                onClick={() => openModal(index % photos.length)}
+              >
+                <div className="aspect-[3/4] overflow-hidden bg-terracotta-50 p-1 sm:p-2">
+                  <img
+                    src={photo.thumbnail}
+                    alt={photo.caption}
+                    className="w-full h-full object-contain rounded-lg group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <p className="text-white font-medium text-xs sm:text-sm">{photo.caption}</p>
+                  </div>
+                </div>
+                <div className="absolute top-4 right-4 w-8 h-8 sm:w-10 sm:h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
               </div>
-              <div className="absolute top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Camera className="w-5 h-5 text-white" />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Indicateurs de progression */}
+          <div className="flex justify-center mt-6 space-x-2">
+            {photos.map((_, index) => (
+              <div
+                key={index}
+                className="w-2 h-2 rounded-full bg-terracotta-300"
+              />
+            ))}
+          </div>
         </div>
 
         {/* Modal */}

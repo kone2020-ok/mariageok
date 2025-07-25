@@ -1,28 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, User, MapPin, MessageSquare, Send, Clock, CheckCircle } from 'lucide-react';
-
-interface Guest {
-  id: string;
-  firstName: string;
-  lastName: string;
-  city: string;
-  message: string;
-  attending: boolean | null;
-  submittedAt: Date;
-}
+import { Calendar, User, MapPin, MessageSquare, Send, Clock, CheckCircle, Copy, ExternalLink } from 'lucide-react';
+import { Guest, RSVPFormData } from '../types/guest';
+import { HybridGuestService } from '../services/hybridGuestService';
 
 const RSVP: React.FC = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RSVPFormData>({
     firstName: '',
     lastName: '',
     city: '',
     message: '',
-    attending: null as boolean | null,
+    attending: null,
     confirmLater: false
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -30,8 +23,7 @@ const RSVP: React.FC = () => {
     seconds: 0
   });
 
-  // Deadline: 31 juillet 2025 à 23h59
-  const deadline = new Date('2025-07-31T23:59:59').getTime();
+  const deadline = HybridGuestService.getDeadline();
 
   useEffect(() => {
     const updateCountdown = () => {
@@ -56,35 +48,30 @@ const RSVP: React.FC = () => {
   }, []);
 
   const isDeadlinePassed = () => {
-    return new Date().getTime() > deadline;
+    return HybridGuestService.isDeadlinePassed();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isDeadlinePassed()) {
       alert('La date limite de confirmation est dépassée.');
       return;
     }
 
     setIsSubmitting(true);
-    
+
     // Simulation d'envoi
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const guest: Guest = {
-      id: Date.now().toString(),
-      ...formData,
-      submittedAt: new Date(),
-      status: formData.confirmLater ? 'pending' : (formData.attending ? 'confirmed' : 'rejected')
-    };
 
-    // Sauvegarder dans localStorage
-    const existingGuests = JSON.parse(localStorage.getItem('wedding-guests') || '[]');
-    existingGuests.push(guest);
-    localStorage.setItem('wedding-guests', JSON.stringify(existingGuests));
-    
-    setSubmitted(true);
+    try {
+      const { guest, token } = await HybridGuestService.addGuest(formData);
+      setConfirmationToken(token);
+      setSubmitted(true);
+    } catch (error: any) {
+      alert(error.message || 'Erreur lors de l\'enregistrement. Veuillez réessayer.');
+    }
+
     setIsSubmitting(false);
   };
 
@@ -95,28 +82,72 @@ const RSVP: React.FC = () => {
     });
   };
 
+  const copyConfirmationLink = () => {
+    if (confirmationToken && typeof confirmationToken === 'string') {
+      try {
+        const link = HybridGuestService.generateReturnUrl(confirmationToken);
+        navigator.clipboard.writeText(link);
+        alert('Lien copié dans le presse-papiers !');
+      } catch (error) {
+        console.error('Error copying link:', error);
+        alert('Erreur lors de la copie du lien');
+      }
+    }
+  };
+
+  // Render success page after submission
   if (submitted) {
+    const showReturnLink = formData.confirmLater && confirmationToken && typeof confirmationToken === 'string';
+
     return (
-      <section className="py-20 px-4">
+      <section key="rsvp-success" className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-br from-terracotta-50 to-terracotta-warm-50">
         <div className="container mx-auto max-w-2xl">
           <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-green-200 overflow-hidden">
-            <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-8 text-white text-center">
-              <CheckCircle className="w-16 h-16 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold mb-2">Merci !</h2>
-              <p className="text-green-100">Votre réponse a été enregistrée avec succès</p>
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-6 sm:p-8 text-white text-center">
+              <CheckCircle className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" />
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">Merci !</h2>
+              <p className="text-green-100 text-sm sm:text-base">Votre réponse a été enregistrée avec succès</p>
             </div>
-            <div className="p-8 text-center">
-              <p className="text-lg text-gray-700 mb-6">
-                Nous avons bien reçu votre confirmation. 
-                {formData.attending ? 
-                  " Nous avons hâte de célébrer ce moment magique avec vous !" :
-                  " Nous comprenons et vous remercions de nous avoir informés."
+            <div className="p-6 sm:p-8 text-center">
+              <p className="text-base sm:text-lg text-gray-700 mb-6">
+                Nous avons bien reçu votre {formData.confirmLater ? 'pré-inscription' : 'confirmation'}.
+                {formData.confirmLater ?
+                  " Vous pouvez revenir confirmer votre présence avant le 31 juillet 2025." :
+                  formData.attending ?
+                    " Nous avons hâte de célébrer ce moment magique avec vous !" :
+                    " Nous comprenons et vous remercions de nous avoir informés."
                 }
               </p>
-              <div className="flex items-center justify-center gap-2 text-rose-600">
-                <span className="text-xl">💕</span>
-                <span className="font-semibold">Audrey & Stéphane</span>
-                <span className="text-xl">💕</span>
+
+              {showReturnLink && confirmationToken && typeof confirmationToken === 'string' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-6 mb-6">
+                  <h3 className="font-semibold text-amber-800 mb-3">🔗 Lien de confirmation</h3>
+                  <p className="text-sm text-amber-700 mb-4">
+                    Gardez ce lien pour revenir confirmer votre présence plus tard :
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <button
+                      onClick={copyConfirmationLink}
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Copy className="w-4 h-4" />
+                      Copier le lien
+                    </button>
+                    <button
+                      onClick={() => window.open(HybridGuestService.generateReturnUrl(confirmationToken), '_blank')}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-medium transition-colors duration-200 flex items-center justify-center gap-2 text-sm"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Ouvrir le lien
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-center gap-2 text-terracotta-600">
+                <span className="text-lg sm:text-xl">💕</span>
+                <span className="font-semibold text-sm sm:text-base">Audrey & Stéphane</span>
+                <span className="text-lg sm:text-xl">💕</span>
               </div>
             </div>
           </div>
@@ -126,18 +157,18 @@ const RSVP: React.FC = () => {
   }
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-br from-rose-50 to-pink-50">
+    <section key="rsvp-form" className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-br from-terracotta-50 to-terracotta-warm-50">
       <div className="container mx-auto max-w-4xl">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-4">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 id="rsvp-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-terracotta-600 to-terracotta-700 bg-clip-text text-transparent mb-4">
             📩 Confirmation de Présence
           </h2>
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="h-px bg-rose-300 w-16"></div>
-            <Calendar className="w-5 h-5 text-rose-500" />
-            <div className="h-px bg-rose-300 w-16"></div>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
+            <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-terracotta-500" />
+            <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
           </div>
-          <p className="text-lg text-rose-700">Merci de confirmer votre présence avant le 31 juillet 2025</p>
+          <p className="text-base sm:text-lg text-terracotta-700 px-4">Merci de confirmer votre présence avant le 31 juillet 2025</p>
         </div>
 
         {/* Countdown to deadline */}
@@ -180,8 +211,8 @@ const RSVP: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-rose-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-8 text-white text-center">
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-terracotta-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-terracotta-500 to-terracotta-600 p-6 sm:p-8 text-white text-center">
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Send className="w-8 h-8" />
               </div>

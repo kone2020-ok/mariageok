@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MessageCircle, Send, MapPin, Heart } from 'lucide-react';
+import emailjs from '@emailjs/browser';
+
+// Configuration EmailJS depuis les variables d'environnement
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const EMAILJS_TO_EMAIL = import.meta.env.VITE_EMAILJS_TO_EMAIL;
 
 const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +17,7 @@ const Contact: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -21,12 +29,38 @@ const Contact: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulation d'envoi
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setSubmitted(true);
-    setIsSubmitting(false);
+    setError(null);
+
+    try {
+      // Initialiser EmailJS avec la clé publique
+      emailjs.init(EMAILJS_PUBLIC_KEY);
+
+      // Préparer les données du template
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+        to_email: EMAILJS_TO_EMAIL,
+        reply_to: formData.email
+      };
+
+      // Envoyer l'email
+      const response = await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams
+      );
+
+
+      setSubmitted(true);
+
+    } catch (error: any) {
+
+      setError('Une erreur est survenue lors de l\'envoi. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -45,11 +79,22 @@ const Contact: React.FC = () => {
               <p className="text-lg text-gray-700 mb-6">
                 Merci pour votre message. Nous sommes ravis de votre intérêt pour notre mariage !
               </p>
-              <div className="flex items-center justify-center gap-2 text-rose-600">
+              <div className="flex items-center justify-center gap-2 text-terracotta-600 mb-6">
                 <Heart className="w-5 h-5 fill-current" />
                 <span className="font-semibold">Audrey & Stéphane</span>
                 <Heart className="w-5 h-5 fill-current" />
               </div>
+
+              <button
+                onClick={() => {
+                  setSubmitted(false);
+                  setFormData({ name: '', email: '', subject: '', message: '' });
+                  setError(null);
+                }}
+                className="bg-gradient-to-r from-terracotta-500 to-terracotta-600 hover:from-terracotta-600 hover:to-terracotta-700 text-white font-medium py-2 px-6 rounded-full transition-all duration-300"
+              >
+                Envoyer un autre message
+              </button>
             </div>
           </div>
         </div>
@@ -58,95 +103,134 @@ const Contact: React.FC = () => {
   }
 
   return (
-    <section className="py-20 px-4 bg-gradient-to-br from-rose-50 to-pink-50">
+    <section className="py-12 sm:py-16 lg:py-20 px-4 bg-gradient-to-br from-terracotta-50 to-terracotta-warm-50">
       <div className="container mx-auto max-w-6xl">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent mb-4">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 id="contact-title" className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-terracotta-600 to-terracotta-700 bg-clip-text text-transparent mb-4">
             📞 Nous Contacter
           </h2>
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="h-px bg-rose-300 w-16"></div>
-            <MessageCircle className="w-5 h-5 text-rose-500" />
-            <div className="h-px bg-rose-300 w-16"></div>
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+            <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-terracotta-500" />
+            <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
           </div>
-          <p className="text-lg text-rose-700">Une question ? Besoin d'informations ? N'hésitez pas à nous écrire !</p>
+          <p className="text-base sm:text-lg text-terracotta-700 px-4">Une question ? Besoin d'informations ? N'hésitez pas à nous écrire !</p>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Informations de contact */}
           <div className="space-y-8">
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-rose-100 p-8">
-              <h3 className="text-2xl font-bold text-rose-800 mb-6 text-center">Nos Coordonnées</h3>
+            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-terracotta-100 p-6 sm:p-8">
+              <h3 className="text-xl sm:text-2xl font-bold text-terracotta-800 mb-4 sm:mb-6 text-center">Nos Coordonnées</h3>
               
               <div className="space-y-6">
-                <div className="flex items-center gap-4 p-4 bg-rose-50 rounded-2xl border border-rose-200">
-                  <div className="w-12 h-12 bg-rose-500 rounded-full flex items-center justify-center">
-                    <Phone className="w-6 h-6 text-white" />
+                <div className="bg-terracotta-50 rounded-2xl p-4 border border-terracotta-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-terracotta-500 rounded-full flex items-center justify-center">
+                      <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Yann-Cedrick Kouadio</h4>
+                      <p className="text-terracotta-600 font-medium text-sm sm:text-base">+225 07 77 119 421</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Téléphone</h4>
-                    <p className="text-rose-600 font-medium">+225 07 88 68 75 87</p>
-                    <p className="text-sm text-gray-600">Audrey (de 9h à 18h)</p>
+                  <div className="flex gap-2">
+                    <a
+                      href="tel:+22507771194211"
+                      className="flex-1 bg-terracotta-500 hover:bg-terracotta-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                    >
+                      📞 Appeler
+                    </a>
+                    <a
+                      href="sms:+22507771194211"
+                      className="flex-1 bg-terracotta-400 hover:bg-terracotta-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                    >
+                      💬 SMS
+                    </a>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-pink-50 rounded-2xl border border-pink-200">
-                  <div className="w-12 h-12 bg-pink-500 rounded-full flex items-center justify-center">
-                    <Mail className="w-6 h-6 text-white" />
+                <div className="bg-terracotta-warm-50 rounded-2xl p-4 border border-terracotta-warm-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-terracotta-warm-500 rounded-full flex items-center justify-center">
+                      <Phone className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Borris Trazie</h4>
+                      <p className="text-terracotta-warm-600 font-medium text-sm sm:text-base">+225 07 87 036 831</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-800">Email</h4>
-                    <p className="text-pink-600 font-medium">audrey.stephane.mariage@gmail.com</p>
-                    <p className="text-sm text-gray-600">Réponse sous 24h</p>
+                  <div className="flex gap-2">
+                    <a
+                      href="tel:+22507870368311"
+                      className="flex-1 bg-terracotta-warm-500 hover:bg-terracotta-warm-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                    >
+                      📞 Appeler
+                    </a>
+                    <a
+                      href="sms:+22507870368311"
+                      className="flex-1 bg-terracotta-warm-400 hover:bg-terracotta-warm-500 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                    >
+                      💬 SMS
+                    </a>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                  <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mt-1">
+                <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center">
+                      <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Email</h4>
+                      <p className="text-emerald-600 font-medium text-sm sm:text-base">audrey.stephane.mariage@gmail.com</p>
+                    </div>
+                  </div>
+                  <a
+                    href="mailto:audrey.stephane.mariage@gmail.com"
+                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                  >
+                    ✉️ Envoyer un email
+                  </a>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
+                  <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mt-1">
                     <MapPin className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-800">Adresse</h4>
-                    <p className="text-blue-600 font-medium">Bingerville</p>
-                    <p className="text-sm text-gray-600">Côte d'Ivoire</p>
+                    <p className="text-emerald-600 font-medium">Bingerville</p>
+                    <p className="text-sm text-emerald-500">Côte d'Ivoire</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* FAQ rapide */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-rose-100 p-8">
-              <h3 className="text-2xl font-bold text-rose-800 mb-6 text-center">Questions Fréquentes</h3>
-              
-              <div className="space-y-4">
-                <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-xl border-l-4 border-rose-300">
-                  <h4 className="font-semibold text-gray-800 mb-2">Puis-je venir accompagné(e) ?</h4>
-                  <p className="text-sm text-gray-600">Merci de nous préciser lors de votre confirmation si vous venez accompagné(e).</p>
-                </div>
-                
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-300">
-                  <h4 className="font-semibold text-gray-800 mb-2">Y a-t-il un menu spécial ?</h4>
-                  <p className="text-sm text-gray-600">Oui ! Menu ivoirien et international. Précisez vos allergies lors de la confirmation.</p>
-                </div>
-                
-                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-l-4 border-green-300">
-                  <h4 className="font-semibold text-gray-800 mb-2">Puis-je prendre des photos ?</h4>
-                  <p className="text-sm text-gray-600">Bien sûr ! Nous encourageons les photos souvenirs pendant la soirée.</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Formulaire de contact */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-rose-100 overflow-hidden">
-            <div className="bg-gradient-to-r from-rose-500 to-pink-500 p-8 text-white text-center">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Send className="w-8 h-8" />
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-terracotta-100 overflow-hidden">
+            <div className="bg-gradient-to-r from-terracotta-500 to-terracotta-600 p-6 sm:p-8 text-white text-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Send className="w-6 h-6 sm:w-8 sm:h-8" />
               </div>
-              <h3 className="text-2xl font-bold">Envoyez-nous un message</h3>
+              <h3 className="text-xl sm:text-2xl font-bold">Envoyez-nous un message</h3>
             </div>
 
             <form onSubmit={handleSubmit} className="p-8 space-y-6">
+              {/* Affichage des erreurs */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">!</span>
+                    </div>
+                    <p className="text-red-700 font-medium">{error}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -158,7 +242,7 @@ const Contact: React.FC = () => {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-terracotta-500 focus:border-transparent transition-all duration-200"
                     placeholder="Votre nom et prénom"
                   />
                 </div>
@@ -172,7 +256,7 @@ const Contact: React.FC = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-terracotta-500 focus:border-transparent transition-all duration-200"
                     placeholder="votre.email@exemple.com"
                   />
                 </div>
@@ -187,7 +271,7 @@ const Contact: React.FC = () => {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-terracotta-500 focus:border-transparent transition-all duration-200"
                 >
                   <option value="">Choisissez un sujet</option>
                   <option value="confirmation">Question sur la confirmation</option>
@@ -208,8 +292,8 @@ const Contact: React.FC = () => {
                   value={formData.message}
                   onChange={handleInputChange}
                   required
-                  rows={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all duration-200 resize-none"
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-terracotta-500 focus:border-transparent transition-all duration-200 resize-none"
                   placeholder="Écrivez votre message ici..."
                 />
               </div>
@@ -218,7 +302,7 @@ const Contact: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting || !formData.name || !formData.email || !formData.subject || !formData.message}
-                  className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-4 px-8 rounded-full text-lg shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-3 mx-auto"
+                  className="bg-gradient-to-r from-terracotta-500 to-terracotta-600 hover:from-terracotta-600 hover:to-terracotta-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 sm:py-4 px-6 sm:px-8 rounded-full text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-3 mx-auto"
                 >
                   {isSubmitting ? (
                     <>
