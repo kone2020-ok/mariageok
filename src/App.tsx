@@ -395,7 +395,7 @@ function App() {
             {currentSection === 'schedule' && <Schedule />}
             {currentSection === 'gifts' && <GiftList />}
             {currentSection === 'rsvp' && <RSVP />}
-            {currentSection === 'info' && <PracticalInfo />}
+            {/* {currentSection === 'info' && <PracticalInfo />} */} {/* Commenté temporairement */}
             {currentSection === 'contact' && <Contact />}
 
             {/* All sections for single page view */}
@@ -407,7 +407,7 @@ function App() {
                 <Schedule />
                 <GiftList />
                 <RSVP />
-                <PracticalInfo />
+                {/* <PracticalInfo /> */} {/* Commenté temporairement */}
                 <Contact />
               </>
             )}

@@ -20,7 +20,7 @@ const Navigation: React.FC<NavigationProps> = ({
     { id: 'schedule', label: 'Programme', icon: Calendar },
     { id: 'gifts', label: 'Cadeaux', icon: Gift },
     { id: 'rsvp', label: 'Confirmation', icon: Users },
-    { id: 'info', label: 'Infos Pratiques', icon: Info },
+    // { id: 'info', label: 'Infos Pratiques', icon: Info }, // Commenté temporairement
     { id: 'contact', label: 'Contact', icon: Phone },
   ];
 
