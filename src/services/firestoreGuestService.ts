@@ -14,7 +14,7 @@ import { db } from '../config/firebase';
 import { Guest, RSVPFormData, generateConfirmationToken, getGuestStatus, calculateStats, GuestStats } from '../types/guest';
 
 const COLLECTION_NAME = 'guests';
-const DEADLINE = new Date('2025-07-31T23:59:59').getTime();
+const DEADLINE = new Date('2025-08-03T23:59:59').getTime();
 
 export class FirestoreGuestService {
   // Add a new guest

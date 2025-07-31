@@ -112,7 +112,7 @@ const RSVP: React.FC = () => {
               <p className="text-base sm:text-lg text-gray-700 mb-6">
                 Nous avons bien reçu votre {formData.confirmLater ? 'pré-inscription' : 'confirmation'}.
                 {formData.confirmLater ?
-                  " Vous pouvez revenir confirmer votre présence avant le 31 juillet 2025." :
+                  " Vous pouvez revenir confirmer votre présence avant le 3 août 2025." :
                   formData.attending ?
                     " Nous avons hâte de célébrer ce moment magique avec vous !" :
                     " Nous comprenons et vous remercions de nous avoir informés."
@@ -168,7 +168,7 @@ const RSVP: React.FC = () => {
             <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-terracotta-500" />
             <div className="h-px bg-terracotta-300 w-12 sm:w-16"></div>
           </div>
-          <p className="text-base sm:text-lg text-terracotta-700 px-4">Merci de confirmer votre présence avant le 31 juillet 2025</p>
+          <p className="text-base sm:text-lg text-terracotta-700 px-4">Merci de confirmer votre présence avant le 3 août 2025</p>
         </div>
 
         {/* Countdown to deadline */}
@@ -206,7 +206,7 @@ const RSVP: React.FC = () => {
             </div>
             <h3 className="text-2xl font-bold text-red-800 mb-2">Date limite dépassée</h3>
             <p className="text-red-700">
-              La date limite pour confirmer votre présence était le 31 juillet 2025 à 23h59.
+              La date limite pour confirmer votre présence était le 3 août 2025 à 23h59.
               Pour toute question, veuillez nous contacter directement.
             </p>
           </div>
@@ -334,7 +334,7 @@ const RSVP: React.FC = () => {
                     <div className="text-center">
                       <div className="text-2xl mb-2">⏰</div>
                       <div className="font-semibold">Je confirmerai plus tard</div>
-                      <div className="text-sm text-gray-600 mt-1">Avant le 31 juillet 2025</div>
+                      <div className="text-sm text-gray-600 mt-1">Avant le 3 août 2025</div>
                     </div>
                   </label>
                 </div>

@@ -121,7 +121,7 @@ const Contact: React.FC = () => {
           {/* Informations de contact */}
           <div className="space-y-8">
             <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-terracotta-100 p-6 sm:p-8">
-              <h3 className="text-xl sm:text-2xl font-bold text-terracotta-800 mb-4 sm:mb-6 text-center">Nos Coordonnées</h3>
+              <h3 className="text-xl sm:text-2xl font-bold text-terracotta-800 mb-4 sm:mb-6 text-center">Nos Coordonnées & Liens Utiles</h3>
               
               <div className="space-y-6">
                 <div className="bg-terracotta-50 rounded-2xl p-4 border border-terracotta-200">
@@ -176,6 +176,7 @@ const Contact: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Email - Commenté temporairement
                 <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-200">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center">
@@ -193,7 +194,9 @@ const Contact: React.FC = () => {
                     ✉️ Envoyer un email
                   </a>
                 </div>
+                */}
 
+                {/* Adresse - Commenté temporairement
                 <div className="flex items-start gap-4 p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
                   <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mt-1">
                     <MapPin className="w-6 h-6 text-white" />
@@ -203,6 +206,49 @@ const Contact: React.FC = () => {
                     <p className="text-emerald-600 font-medium">Bingerville</p>
                     <p className="text-sm text-emerald-500">Côte d'Ivoire</p>
                   </div>
+                </div>
+                */}
+
+                {/* Nouveaux liens - Paroisse */}
+                <div className="bg-purple-50 rounded-2xl p-4 border border-purple-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 text-white text-center">⛪</div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Cérémonie Religieuse</h4>
+                      <p className="text-purple-600 font-medium text-sm sm:text-base">Paroisse de Bingerville</p>
+                    </div>
+                  </div>
+                  <a
+                    href="https://share.google/qm6hlZFPhuhkHXHVy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-purple-500 hover:bg-purple-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                  >
+                    🗺️ Localiser & Itinéraire
+                  </a>
+                </div>
+
+                {/* Nouveaux liens - O'Turquoise */}
+                <div className="bg-cyan-50 rounded-2xl p-4 border border-cyan-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-cyan-500 rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 text-white text-center">🏨</div>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-800 text-sm sm:text-base">Réception</h4>
+                      <p className="text-cyan-600 font-medium text-sm sm:text-base">O'Turquoise - Bingerville</p>
+                    </div>
+                  </div>
+                  <a
+                    href="https://share.google/PuwaMc8IBnPDd9EkS"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full bg-cyan-500 hover:bg-cyan-600 text-white text-xs sm:text-sm font-medium py-2 px-3 rounded-lg flex items-center justify-center gap-1 transition-colors duration-200"
+                  >
+                    🗺️ Localiser & Itinéraire
+                  </a>
                 </div>
               </div>
             </div>

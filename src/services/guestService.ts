@@ -1,7 +1,7 @@
 import { Guest, RSVPFormData, generateConfirmationToken, getGuestStatus, GuestStats, calculateStats } from '../types/guest';
 
 const STORAGE_KEY = 'wedding-guests';
-const DEADLINE = new Date('2025-07-31T23:59:59').getTime();
+const DEADLINE = new Date('2025-08-03T23:59:59').getTime();
 
 export class GuestService {
   static saveGuests(guests: Guest[]): void {

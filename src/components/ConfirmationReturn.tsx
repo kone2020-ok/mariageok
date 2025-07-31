@@ -133,7 +133,7 @@ const ConfirmationReturn: React.FC<ConfirmationReturnProps> = ({ token, onComple
               <Clock className="w-12 h-12 text-red-500 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-800 mb-4">Délai dépassé</h3>
               <p className="text-gray-600 mb-6">
-                La date limite de confirmation était le 31 juillet 2025 à 23h59.
+                La date limite de confirmation était le 3 août 2025 à 23h59.
               </p>
               <button
                 onClick={onComplete}
